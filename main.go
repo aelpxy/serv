@@ -43,7 +43,7 @@ func main() {
 	}
 
 	cmd.Flags().StringVarP(&application_port, "port", "p", "8080", "Port to expose webserver on.")
-	cmd.Flags().StringVarP(&storage_folder, "folder", "f", "content", "Folder to store uploaded data on.")
+	cmd.Flags().StringVarP(&storage_folder, "folder", "f", "uploads", "Folder to store uploaded data on.")
 
 	rootCmd := &cobra.Command{Use: "broccoli"}
 	rootCmd.AddCommand(cmd)
