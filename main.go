@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	
+
 	"github.com/spf13/cobra"
 )
 
@@ -22,7 +22,7 @@ func main() {
 		Short: "Serve the application",
 		Long:  "Serve the application",
 		Run: func(cmd *cobra.Command, args []string) {
-			
+
 			if application_port == "" {
 				log.Println("Port is missing")
 			}
