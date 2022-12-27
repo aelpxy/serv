@@ -68,6 +68,7 @@ func uploadHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	dst, err := os.Create(fmt.Sprintf(storage_folder+"/%s", filepath.Base(fileHeader.Filename)))
+	
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
