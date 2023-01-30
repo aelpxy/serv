@@ -16,6 +16,12 @@ var (
 	storage_folder   string
 )
 
+// type Server struct {
+// 	Addr    string
+// 	Handler Handler
+// 	TLSConfig *tls.Config
+// } - WIP
+
 func main() {
 	cmd := &cobra.Command{
 		Use:   "serve",
@@ -29,18 +35,22 @@ func main() {
 
 			log.Println("Starting...")
 
-			g := http.NewServeMux()
-			g.Handle("/", http.FileServer(http.Dir(storage_folder)))
-			g.HandleFunc("/upload", uploadHandler)
+			r := http.NewServeMux()
+			r.Handle("/", http.FileServer(http.Dir(storage_folder)))
+			r.HandleFunc("/upload", UploadFile)
 
 			log.Printf("Listening on http://0.0.0.0:%v \n", application_port)
 			log.Printf("Storing files on %v \n", storage_folder)
 
-			if err := http.ListenAndServe(":"+application_port, g); err != nil {
+			// `.ListenAndServeTLS` method should work just fine for SSL certs.
+
+			if err := http.ListenAndServe(":"+application_port, r); err != nil {
 				log.Fatal(err)
 			}
 		},
 	}
+
+	// TODO: ADD SSL SUPPORT
 
 	cmd.Flags().StringVarP(&application_port, "port", "p", "8080", "Port to expose webserver on.")
 	cmd.Flags().StringVarP(&storage_folder, "folder", "f", "uploads", "Folder to store uploaded data on.")
@@ -50,7 +60,7 @@ func main() {
 	rootCmd.Execute()
 }
 
-func uploadHandler(w http.ResponseWriter, r *http.Request) {
+func UploadFile(w http.ResponseWriter, r *http.Request) {
 	file, fileHeader, err := r.FormFile("file")
 
 	if err != nil {
@@ -68,7 +78,7 @@ func uploadHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	dst, err := os.Create(fmt.Sprintf(storage_folder+"/%s", filepath.Base(fileHeader.Filename)))
-	
+
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -82,5 +92,5 @@ func uploadHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fmt.Fprintf(w, "success")
+	fmt.Fprintf(w, "uploaded")
 }
