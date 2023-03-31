@@ -1,46 +1,56 @@
 package handlers
 
-// WIP HANDLER
+import (
+	"fmt"
+	"io"
+	"net/http"
+	"os"
+	"path/filepath"
+)
 
-// import (
-// 	"fmt"
-// 	"io"
-// 	"net/http"
-// 	"os"
-// 	"path/filepath"
-// )
+func UploadFile(storageFolder string) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
 
-// func UploadFile(w http.ResponseWriter, r *http.Request) {
-// 	file, fileHeader, err := r.FormFile("file")
+		file, fileHeader, err := r.FormFile("file")
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		defer file.Close()
 
-// 	if err != nil {
-// 		http.Error(w, err.Error(), http.StatusBadRequest)
-// 		return
-// 	}
+		errCh := make(chan error)
+		go func() {
+			err = os.MkdirAll(storageFolder, 0755)
+			if err != nil {
+				errCh <- err
+				return
+			}
 
-// 	defer file.Close()
+			dstPath := filepath.Join(storageFolder, fileHeader.Filename)
+			dst, err := os.Create(dstPath)
+			if err != nil {
+				errCh <- err
+				return
+			}
+			defer dst.Close()
 
-// 	err = os.MkdirAll(storage_folder, os.ModePerm)
+			_, err = io.Copy(dst, file)
+			if err != nil {
+				errCh <- err
+				return
+			}
+			errCh <- nil
+		}()
 
-// 	if err != nil {
-// 		http.Error(w, err.Error(), http.StatusInternalServerError)
-// 		return
-// 	}
+		if err = <-errCh; err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
 
-// 	dst, err := os.Create(fmt.Sprintf(storage_folder+"/%s", filepath.Base(fileHeader.Filename)))
-
-// 	if err != nil {
-// 		http.Error(w, err.Error(), http.StatusInternalServerError)
-// 		return
-// 	}
-
-// 	defer dst.Close()
-
-// 	_, err = io.Copy(dst, file)
-// 	if err != nil {
-// 		http.Error(w, err.Error(), http.StatusInternalServerError)
-// 		return
-// 	}
-
-// 	fmt.Fprintf(w, "uploaded")
-// }
+		fmt.Fprintf(w, "File uploaded successfully\n")
+	}
+}
